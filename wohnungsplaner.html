@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Wohnung">
+<title>Meine Wohnung</title>
+<style>
+  :root {
+    --bg:#ffffff;--bg2:#f5f5f0;--bg3:#efefea;
+    --text:#1a1a18;--text2:#6b6b66;--text3:#9a9a94;
+    --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+    --radius:10px;--radius-lg:14px;
+    --green:#1D9E75;--amber:#BA7517;--blue:#185FA5;--red:#A32D2D;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--text:#f2f2f0;--text2:#aeaead;--text3:#7a7a78;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--green:#34c88a;--amber:#e09230;--blue:#4f9de0;--red:#e05555;}
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
+  .view{display:none;flex-direction:column;height:100dvh;}
+  .view.active{display:flex;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 11px;padding-top:max(14px,env(safe-area-inset-top,14px));border-bottom:0.5px solid var(--border);background:var(--bg);flex-shrink:0;}
+  .topbar h1{font-size:17px;font-weight:600;}
+  .back-btn{background:none;border:none;cursor:pointer;color:var(--blue);font-size:15px;display:flex;align-items:center;gap:4px;padding:4px 0;}
+  .icon-btn{background:none;border:none;cursor:pointer;color:var(--blue);font-size:14px;display:flex;align-items:center;gap:4px;padding:4px 0;}
+  .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:16px;}
+  .bottom-nav{display:flex;border-top:0.5px solid var(--border);background:var(--bg);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);}
+  .nav-btn{flex:1;padding:9px 4px 10px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text3);font-size:10px;font-weight:500;}
+  .nav-btn.active{color:var(--blue);}
+  .nav-btn svg{width:24px;height:24px;}
+  .summary-bar{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:14px 16px 8px;}
+  .stat-card{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;}
+  .stat-label{font-size:12px;color:var(--text2);margin-bottom:4px;}
+  .stat-value{font-size:21px;font-weight:600;}
+  .stat-value.green{color:var(--green);}.stat-value.amber{color:var(--amber);}.stat-value.blue{color:var(--blue);}
+  .section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding:14px 16px 7px;}
+  .room-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:13px 14px;margin:0 16px 10px;cursor:pointer;display:flex;align-items:center;gap:12px;-webkit-user-select:none;}
+  .room-card:active{background:var(--bg2);}
+  .room-icon{width:40px;height:40px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .room-info{flex:1;min-width:0;}
+  .room-name{font-size:15px;font-weight:600;}
+  .room-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+  .progress-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:7px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:2px;background:var(--green);transition:width 0.4s;}
+  .filter-bar{display:flex;gap:7px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+  .filter-bar::-webkit-scrollbar{display:none;}
+  .filter-btn{background:none;border:0.5px solid var(--border2);border-radius:20px;padding:5px 13px;font-size:13px;cursor:pointer;color:var(--text2);white-space:nowrap;-webkit-user-select:none;}
+  .filter-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+  .item-row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 8px;}
+  .item-row:active{background:var(--bg2);}
+  .checkbox{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;cursor:pointer;background:transparent;}
+  .checkbox.checked{background:var(--green);border-color:var(--green);}
+  .item-info{flex:1;min-width:0;cursor:pointer;}
+  .item-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .item-name.done{color:var(--text3);text-decoration:line-through;}
+  .item-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+  .status-badge{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+  .badge-planned{background:#FAEEDA;color:#854F0B;}.badge-ordered{background:#dceefb;color:#185FA5;}.badge-owned{background:#e2f5e8;color:#1a7a44;}
+  @media(prefers-color-scheme:dark){.badge-planned{background:#4a3010;color:#f0a840;}.badge-ordered{background:#0e2d4a;color:#6ab4f0;}.badge-owned{background:#0e3520;color:#50d084;}}
+  .item-delete{background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;flex-shrink:0;display:flex;align-items:center;}
+  .item-delete:active{color:var(--red);}
+  .item-link{background:none;border:none;cursor:pointer;color:var(--blue);padding:4px;flex-shrink:0;display:flex;align-items:center;text-decoration:none;}
+  .item-link:active{opacity:0.6;}
+  .cat-badge{font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+  .fab{position:fixed;bottom:calc(70px + env(safe-area-inset-bottom,0px));right:20px;width:52px;height:52px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.25);transition:transform 0.15s;z-index:20;}
+  .fab:active{transform:scale(0.94);}
+  .shoplist-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 8px;}
+  .shoplist-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;cursor:pointer;background:transparent;}
+  .shoplist-check.done{background:var(--green);border-color:var(--green);}
+  .shop-name{font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .shop-name.done{color:var(--text3);text-decoration:line-through;opacity:0.6;}
+  .shop-price{font-size:13px;color:var(--text2);white-space:nowrap;}
+  .cost-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);margin:0 16px 10px;overflow:hidden;}
+  .cost-header{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;}
+  .cost-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .cost-amt{font-size:14px;font-weight:600;}
+  .cost-body{border-top:0.5px solid var(--border);padding:8px 14px;}
+  .cost-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;}
+  .cost-total{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-top:0.5px solid var(--border2);margin:4px 16px 0;}
+  .cost-total-label{font-size:15px;font-weight:600;}
+  .cost-total-amt{font-size:18px;font-weight:700;color:var(--green);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;z-index:100;backdrop-filter:blur(2px);}
+  .modal{background:var(--bg);width:100%;border-radius:20px 20px 0 0;padding:20px 16px;padding-bottom:max(24px,env(safe-area-inset-bottom,24px));max-height:92dvh;overflow-y:auto;}
+  .modal-handle{width:36px;height:4px;background:var(--bg3);border-radius:2px;margin:0 auto 18px;}
+  .modal h3{font-size:17px;font-weight:700;margin-bottom:16px;}
+  .form-group{margin-bottom:13px;}
+  .form-group label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;}
+  .form-group input,.form-group select{width:100%;padding:11px 13px;font-size:16px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);-webkit-appearance:none;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn-row{display:flex;gap:10px;margin-top:18px;}
+  .btn-cancel{flex:1;padding:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);cursor:pointer;font-size:16px;color:var(--text2);font-weight:600;}
+  .btn-save{flex:2;padding:13px;border:none;border-radius:var(--radius);background:var(--blue);color:#fff;cursor:pointer;font-size:16px;font-weight:700;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--text3);}
+  .empty-state .empty-icon{font-size:44px;margin-bottom:12px;}
+  .empty-state p{font-size:14px;line-height:1.5;}
+
+  /* Login screen */
+  #view-login{display:none;flex-direction:column;height:100dvh;align-items:center;justify-content:center;padding:40px 24px;gap:20px;}
+  #view-login.active{display:flex;}
+  .login-icon{font-size:56px;margin-bottom:8px;}
+  .login-title{font-size:24px;font-weight:700;color:var(--text);}
+  .login-sub{font-size:15px;color:var(--text2);text-align:center;line-height:1.5;}
+  .btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;font-size:16px;font-weight:600;color:var(--text);}
+  .btn-google:active{background:var(--bg2);}
+  .btn-google svg{width:22px;height:22px;flex-shrink:0;}
+
+  /* Loading screen */
+  #view-loading{display:none;flex-direction:column;height:100dvh;align-items:center;justify-content:center;gap:14px;}
+  #view-loading.active{display:flex;}
+  .spinner{width:36px;height:36px;border:3px solid var(--bg3);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{font-size:14px;color:var(--text2);}
+
+  /* User info in topbar */
+  .user-btn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);font-size:12px;padding:4px 0;}
+  .user-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;}
+  .user-avatar-placeholder{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+
+  /* Sync indicator */
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+  .sync-dot.syncing{background:var(--amber);animation:pulse 1s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+  <symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></symbol>
+  <symbol id="ic-cart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></symbol>
+  <symbol id="ic-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2z"/><path d="M12 2a10 10 0 0110 10H12V2z"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="ic-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="ic-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="ic-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></symbol>
+  <symbol id="ic-checks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 8 16 16 8"/><polyline points="9 12 13 16 21 8"/></symbol>
+  <symbol id="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="ic-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+</svg>
+
+<!-- LOADING -->
+<div id="view-loading" class="view active">
+  <div class="spinner"></div>
+  <div class="loading-text">Wird geladen...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="view-login" class="view">
+  <div class="login-icon">🏠</div>
+  <div class="login-title">Meine Wohnung</div>
+  <div class="login-sub">Melde dich an, um deine Daten auf allen Geräten zu synchronisieren.</div>
+  <button class="btn-google" onclick="signInWithGoogle()">
+    <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Mit Google anmelden
+  </button>
+</div>
+
+<!-- ROOMS VIEW -->
+<div id="view-rooms" class="view">
+  <div class="topbar">
+    <h1>Meine Wohnung</h1>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="sync-dot" id="sync-dot"></div>
+      <button class="icon-btn" onclick="openAddRoom()"><svg width="18" height="18"><use href="#ic-plus"/></svg> Raum</button>
+      <button class="user-btn" onclick="showUserMenu()" id="user-btn"><div class="user-avatar-placeholder" id="user-avatar">?</div></button>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <div class="summary-bar">
+      <div class="stat-card"><div class="stat-label">Vorhanden</div><div class="stat-value green" id="stat-owned">0</div></div>
+      <div class="stat-card"><div class="stat-label">Ausstehend</div><div class="stat-value amber" id="stat-pending">0</div></div>
+      <div class="stat-card"><div class="stat-label">Ausgegeben</div><div class="stat-value blue" id="stat-spent">€0</div></div>
+      <div class="stat-card"><div class="stat-label">Noch geplant</div><div class="stat-value" id="stat-plan">€0</div></div>
+    </div>
+    <div class="section-title">Räume</div>
+    <div id="rooms-container"></div>
+  </div>
+  <button class="fab" onclick="openAddItem(null)"><svg width="28" height="28" style="color:#fff"><use href="#ic-plus"/></svg></button>
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-rooms" onclick="switchTab('rooms')"><svg><use href="#ic-home"/></svg>Räume</button>
+    <button class="nav-btn" id="nav-shopping" onclick="switchTab('shopping')"><svg><use href="#ic-cart"/></svg>Einkauf</button>
+    <button class="nav-btn" id="nav-costs" onclick="switchTab('costs')"><svg><use href="#ic-chart"/></svg>Kosten</button>
+  </div>
+</div>
+
+<!-- ITEMS VIEW -->
+<div id="view-items" class="view">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()"><svg width="20" height="20"><use href="#ic-back"/></svg> Zurück</button>
+    <h1 id="room-title">Raum</h1>
+    <button class="icon-btn" onclick="deleteCurrentRoom()" style="color:var(--red)"><svg width="18" height="18"><use href="#ic-trash"/></svg></button>
+  </div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Alle</button>
+    <button class="filter-btn" onclick="setFilter('planned',this)">Geplant</button>
+    <button class="filter-btn" onclick="setFilter('ordered',this)">Bestellt</button>
+    <button class="filter-btn" onclick="setFilter('owned',this)">Vorhanden</button>
+  </div>
+  <div class="scroll-area" id="items-container"></div>
+  <button class="fab" onclick="openAddItem(currentRoomId)"><svg width="28" height="28" style="color:#fff"><use href="#ic-plus"/></svg></button>
+</div>
+
+<!-- SHOPPING VIEW -->
+<div id="view-shopping" class="view">
+  <div class="topbar">
+    <h1>Einkaufsliste</h1>
+    <button class="icon-btn" onclick="markAllShopDone()"><svg width="18" height="18"><use href="#ic-checks"/></svg> Erledigt</button>
+  </div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setShopFilter('all',this)">Alle</button>
+    <button class="filter-btn" onclick="setShopFilter('planned',this)">Geplant</button>
+    <button class="filter-btn" onclick="setShopFilter('ordered',this)">Bestellt</button>
+  </div>
+  <div class="scroll-area" id="shop-container"></div>
+  <div class="bottom-nav">
+    <button class="nav-btn" id="nav-rooms2" onclick="switchTab('rooms')"><svg><use href="#ic-home"/></svg>Räume</button>
+    <button class="nav-btn active" id="nav-shopping2" onclick="switchTab('shopping')"><svg><use href="#ic-cart"/></svg>Einkauf</button>
+    <button class="nav-btn" id="nav-costs2" onclick="switchTab('costs')"><svg><use href="#ic-chart"/></svg>Kosten</button>
+  </div>
+</div>
+
+<!-- COSTS VIEW -->
+<div id="view-costs" class="view">
+  <div class="topbar"><h1>Kostenübersicht</h1></div>
+  <div class="scroll-area">
+    <div class="summary-bar">
+      <div class="stat-card"><div class="stat-label">Ausgegeben</div><div class="stat-value green" id="cost-spent">€0</div></div>
+      <div class="stat-card"><div class="stat-label">Noch offen</div><div class="stat-value amber" id="cost-open">€0</div></div>
+    </div>
+    <div id="cost-container"></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" id="nav-rooms3" onclick="switchTab('rooms')"><svg><use href="#ic-home"/></svg>Räume</button>
+    <button class="nav-btn" id="nav-shopping3" onclick="switchTab('shopping')"><svg><use href="#ic-cart"/></svg>Einkauf</button>
+    <button class="nav-btn active" id="nav-costs3" onclick="switchTab('costs')"><svg><use href="#ic-chart"/></svg>Kosten</button>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBRFoyLSQmu-7Yk9qOvOzibRzFv0vkfU1c",
+  authDomain: "wohnungsplaner.firebaseapp.com",
+  projectId: "wohnungsplaner",
+  storageBucket: "wohnungsplaner.firebasestorage.app",
+  messagingSenderId: "235493159371",
+  appId: "1:235493159371:web:af5f13788203af80f2c64e"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser = null;
+let unsubRooms = null;
+let unsubItems = null;
+
+// Expose to global scope
+window.signInWithGoogle = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    alert('Anmeldung fehlgeschlagen: ' + e.message);
+  }
+};
+
+window.doSignOut = async () => {
+  if (unsubRooms) unsubRooms();
+  if (unsubItems) unsubItems();
+  await signOut(auth);
+};
+
+function setSyncing(val) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.classList.toggle('syncing', val);
+}
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    // Update avatar
+    const av = document.getElementById('user-avatar');
+    if (user.photoURL) {
+      av.outerHTML = `<img class="user-avatar" id="user-avatar" src="${user.photoURL}" referrerpolicy="no-referrer">`;
+    } else {
+      av.textContent = (user.displayName||user.email||'?')[0].toUpperCase();
+    }
+    setupListeners(user.uid);
+    showView('rooms');
+  } else {
+    if (unsubRooms) unsubRooms();
+    if (unsubItems) unsubItems();
+    showView('login');
+  }
+});
+
+function setupListeners(uid) {
+  setSyncing(true);
+  // Rooms listener
+  unsubRooms = onSnapshot(collection(db, 'users', uid, 'rooms'), snap => {
+    data.rooms = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderRooms();
+    setSyncing(false);
+  });
+  // Items listener
+  unsubItems = onSnapshot(collection(db, 'users', uid, 'items'), snap => {
+    data.items = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderRooms();
+    const cur = document.querySelector('.view.active')?.id;
+    if (cur === 'view-items') renderItems();
+    if (cur === 'view-shopping') renderShop();
+    if (cur === 'view-costs') renderCosts();
+    setSyncing(false);
+  });
+}
+
+// Override save functions to write to Firestore
+window.fbSaveRoom = async (room) => {
+  if (!currentUser) return;
+  setSyncing(true);
+  await setDoc(doc(db, 'users', currentUser.uid, 'rooms', room.id), room);
+};
+
+window.fbDeleteRoom = async (roomId) => {
+  if (!currentUser) return;
+  setSyncing(true);
+  await deleteDoc(doc(db, 'users', currentUser.uid, 'rooms', roomId));
+};
+
+window.fbSaveItem = async (item) => {
+  if (!currentUser) return;
+  setSyncing(true);
+  await setDoc(doc(db, 'users', currentUser.uid, 'items', item.id), item);
+};
+
+window.fbDeleteItem = async (itemId) => {
+  if (!currentUser) return;
+  setSyncing(true);
+  await deleteDoc(doc(db, 'users', currentUser.uid, 'items', itemId));
+};
+
+window.fbSaveItems = async (items) => {
+  if (!currentUser) return;
+  setSyncing(true);
+  const batch = writeBatch(db);
+  items.forEach(item => {
+    batch.set(doc(db, 'users', currentUser.uid, 'items', item.id), item);
+  });
+  await batch.commit();
+};
+</script>
+
+<script>
+const ROOM_EMOJIS = ['🛋️','🛏️','🚿','🍳','🚪','👔','📚','💻','🪑','🏠'];
+const ROOM_EMOJI_NAMES = ['Wohnzimmer','Schlafzimmer','Bad','Küche','Flur','Ankleidezimmer','Büro','Gaming','Esszimmer','Sonstig'];
+const ICON_COLORS = [
+  {bg:'#dceefb',c:'#0d3d6b'},{bg:'#e2f5e8',c:'#0e4020'},{bg:'#FAEEDA',c:'#4a2800'},
+  {bg:'#EEEDFE',c:'#2a1a6e'},{bg:'#E1F5EE',c:'#074030'},{bg:'#FAECE7',c:'#5a1a08'},
+  {bg:'#FBEAF0',c:'#5a0a28'},{bg:'#f0efe8',c:'#3a3a30'}
+];
+const CATEGORIES = ['Möbel','Beleuchtung','Dekoration','Elektro','Textilien','Küche','Bad','Sonstiges'];
+const CAT_COLORS = {
+  'Möbel':{bg:'#dceefb',c:'#0d3d6b'},'Beleuchtung':{bg:'#FAEEDA',c:'#4a2800'},
+  'Dekoration':{bg:'#FBEAF0',c:'#5a0a28'},'Elektro':{bg:'#EEEDFE',c:'#2a1a6e'},
+  'Textilien':{bg:'#E1F5EE',c:'#074030'},'Küche':{bg:'#e2f5e8',c:'#0e4020'},
+  'Bad':{bg:'#FAECE7',c:'#5a1a08'},'Sonstiges':{bg:'#f0efe8',c:'#3a3a30'}
+};
+
+let data = {rooms:[], items:[]};
+let currentRoomId = null;
+let currentFilter = 'all';
+let shopFilter = 'all';
+let editingItemId = null;
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  if (tab==='rooms')    { document.getElementById('view-rooms').classList.add('active'); renderRooms(); }
+  if (tab==='shopping') { document.getElementById('view-shopping').classList.add('active'); renderShop(); }
+  if (tab==='costs')    { document.getElementById('view-costs').classList.add('active'); renderCosts(); }
+}
+
+function goBack() {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-rooms').classList.add('active');
+  renderRooms();
+}
+
+function showUserMenu() {
+  if (confirm('Abmelden?')) window.doSignOut && window.doSignOut();
+}
+
+function renderRooms() {
+  const owned = data.items.filter(i=>i.status==='owned').length;
+  const pending = data.items.filter(i=>i.status!=='owned').length;
+  const spent = data.items.filter(i=>i.status==='owned'&&i.price).reduce((s,i)=>s+parseFloat(i.price),0);
+  const plan  = data.items.filter(i=>i.status!=='owned'&&i.price).reduce((s,i)=>s+parseFloat(i.price),0);
+  document.getElementById('stat-owned').textContent = owned;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-spent').textContent = '€'+spent.toFixed(2);
+  document.getElementById('stat-plan').textContent = '€'+plan.toFixed(2);
+
+  const c = document.getElementById('rooms-container');
+  if (!data.rooms.length) {
+    c.innerHTML = '<div class="empty-state"><div class="empty-icon">🏠</div><p>Noch keine Räume.<br>Tippe oben auf "+ Raum".</p></div>';
+    return;
+  }
+  const sorted = [...data.rooms].sort((a,b)=>(a.order||0)-(b.order||0));
+  c.innerHTML = sorted.map((r,idx)=>{
+    const items = data.items.filter(i=>i.roomId===r.id);
+    const done = items.filter(i=>i.status==='owned').length;
+    const pct = items.length ? Math.round(done/items.length*100) : 0;
+    const col = ICON_COLORS[idx%ICON_COLORS.length];
+    return `<div class="room-card" onclick="openRoom('${r.id}')">
+      <div class="room-icon" style="background:${col.bg}">${r.icon||'🏠'}</div>
+      <div class="room-info">
+        <div class="room-name">${r.name}</div>
+        <div class="room-meta">${done}/${items.length} vorhanden</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <svg width="18" height="18" style="color:var(--text3);flex-shrink:0"><use href="#ic-chevron"/></svg>
+    </div>`;
+  }).join('');
+}
+
+function openRoom(id) {
+  currentRoomId = id;
+  document.getElementById('room-title').textContent = data.rooms.find(r=>r.id===id)?.name||'';
+  currentFilter = 'all';
+  document.querySelectorAll('#view-items .filter-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-items').classList.add('active');
+  renderItems();
+}
+
+function deleteCurrentRoom() {
+  if (!confirm('Raum und alle Gegenstände löschen?')) return;
+  const roomId = currentRoomId;
+  // Delete all items in room
+  const itemsToDelete = data.items.filter(i=>i.roomId===roomId);
+  itemsToDelete.forEach(i => window.fbDeleteItem && window.fbDeleteItem(i.id));
+  window.fbDeleteRoom && window.fbDeleteRoom(roomId);
+  goBack();
+}
+
+function renderItems() {
+  const all = data.items.filter(i=>i.roomId===currentRoomId);
+  const filtered = currentFilter==='all' ? all : all.filter(i=>i.status===currentFilter);
+  const c = document.getElementById('items-container');
+  if (!filtered.length) {
+    c.innerHTML = '<div class="empty-state"><div class="empty-icon">🪑</div><p>'+(all.length?'Keine Einträge in dieser Kategorie.':'Noch nichts hier.<br>Tippe auf + zum Hinzufügen.')+'</p></div>';
+    return;
+  }
+  const labels = {planned:'Geplant',ordered:'Bestellt',owned:'Vorhanden'};
+  c.innerHTML = filtered.map(item=>{
+    const cc = item.category ? (CAT_COLORS[item.category]||CAT_COLORS['Sonstiges']) : null;
+    const catBadge = cc ? `<span class="cat-badge" style="background:${cc.bg};color:${cc.c}">${item.category}</span>` : '';
+    const price = item.price ? '€'+parseFloat(item.price).toFixed(2) : '';
+    const meta = [price,item.note].filter(Boolean).join(' · ');
+    const checkInner = item.status==='owned' ? `<svg width="13" height="13" style="color:#fff"><use href="#ic-check"/></svg>` : '';
+    const linkBtn = item.link ? `<a class="item-link" href="${item.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><svg width="18" height="18"><use href="#ic-link"/></svg></a>` : '';
+    return `<div class="item-row">
+      <div class="checkbox ${item.status==='owned'?'checked':''}" onclick="toggleOwned('${item.id}')">${checkInner}</div>
+      <div class="item-info" onclick="openEditItem('${item.id}')">
+        <div class="item-name ${item.status==='owned'?'done':''}">${item.name}</div>
+        ${meta?`<div class="item-meta">${meta}</div>`:''}
+      </div>
+      ${catBadge}
+      <span class="status-badge badge-${item.status}">${labels[item.status]}</span>
+      ${linkBtn}
+      <button class="item-delete" onclick="deleteItem('${item.id}')"><svg width="18" height="18"><use href="#ic-x"/></svg></button>
+    </div>`;
+  }).join('');
+}
+
+function renderShop() {
+  const candidates = data.items.filter(i=>i.status!=='owned');
+  const filtered = shopFilter==='all' ? candidates : candidates.filter(i=>i.status===shopFilter);
+  const sorted = [...filtered].sort((a,b)=>(a._shopDone?1:-1)-(b._shopDone?1:-1));
+  const c = document.getElementById('shop-container');
+  if (!sorted.length) {
+    c.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div><p>Einkaufsliste ist leer –<br>alles vorhanden!</p></div>';
+    return;
+  }
+  const groups = {};
+  sorted.forEach(item=>{
+    const room = data.rooms.find(r=>r.id===item.roomId);
+    const key = room ? room.name : 'Kein Raum';
+    if (!groups[key]) groups[key]=[];
+    groups[key].push(item);
+  });
+  let html='';
+  Object.entries(groups).forEach(([roomName,items])=>{
+    html += `<div class="section-title">${roomName}</div>`;
+    items.forEach(item=>{
+      const price = item.price ? '€'+parseFloat(item.price).toFixed(2) : '';
+      const cc = item.category ? (CAT_COLORS[item.category]||CAT_COLORS['Sonstiges']) : null;
+      const catBadge = cc ? `<span class="cat-badge" style="background:${cc.bg};color:${cc.c};margin-left:5px">${item.category}</span>` : '';
+      const checkInner = item._shopDone ? `<svg width="13" height="13" style="color:#fff"><use href="#ic-check"/></svg>` : '';
+      const linkBtn = item.link ? `<a class="item-link" href="${item.link}" target="_blank" rel="noopener"><svg width="18" height="18"><use href="#ic-link"/></svg></a>` : '';
+      html += `<div class="shoplist-item">
+        <div class="shoplist-check ${item._shopDone?'done':''}" onclick="toggleShopDone('${item.id}')">${checkInner}</div>
+        <span class="shop-name ${item._shopDone?'done':''}">${item.name}${catBadge}</span>
+        <span class="shop-price">${price}</span>
+        ${linkBtn}
+        <span class="status-badge badge-${item.status}" style="margin-left:4px">${item.status==='planned'?'Geplant':'Bestellt'}</span>
+      </div>`;
+    });
+  });
+  c.innerHTML = html;
+}
+
+function toggleShopDone(id) {
+  const item = data.items.find(i=>i.id===id);
+  if (!item) return;
+  item._shopDone = !item._shopDone;
+  window.fbSaveItem && window.fbSaveItem(item);
+}
+
+function markAllShopDone() {
+  const checked = data.items.filter(i=>i._shopDone);
+  if (!checked.length) { alert('Noch nichts abgehakt.'); return; }
+  if (!confirm(checked.length+' Artikel als "Vorhanden" markieren?')) return;
+  checked.forEach(i=>{ i.status='owned'; i._shopDone=false; });
+  window.fbSaveItems && window.fbSaveItems(checked);
+}
+
+function setShopFilter(f,btn) {
+  shopFilter=f;
+  document.querySelectorAll('#view-shopping .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderShop();
+}
+
+function renderCosts() {
+  const allP = data.items.filter(i=>i.price);
+  const spent = allP.filter(i=>i.status==='owned').reduce((s,i)=>s+parseFloat(i.price),0);
+  const open  = allP.filter(i=>i.status!=='owned').reduce((s,i)=>s+parseFloat(i.price),0);
+  document.getElementById('cost-spent').textContent = '€'+spent.toFixed(2);
+  document.getElementById('cost-open').textContent  = '€'+open.toFixed(2);
+  const c = document.getElementById('cost-container');
+  if (!allP.length) {
+    c.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>Noch keine Preise erfasst.</p></div>';
+    return;
+  }
+  let byRoom='';
+  const sortedRooms = [...data.rooms].sort((a,b)=>(a.order||0)-(b.order||0));
+  sortedRooms.forEach((r,idx)=>{
+    const items = data.items.filter(i=>i.roomId===r.id&&i.price);
+    if (!items.length) return;
+    const total = items.reduce((s,i)=>s+parseFloat(i.price),0);
+    const col = ICON_COLORS[idx%ICON_COLORS.length];
+    byRoom += `<div class="cost-card">
+      <div class="cost-header">
+        <div class="cost-title"><div class="room-icon" style="width:28px;height:28px;font-size:15px;border-radius:7px;background:${col.bg}">${r.icon||'🏠'}</div>${r.name}</div>
+        <span class="cost-amt">€${total.toFixed(2)}</span>
+      </div>
+      <div class="cost-body">
+        ${items.map(i=>`<div class="cost-row"><span style="color:var(--text)">${i.name}</span><span style="color:${i.status==='owned'?'var(--green)':'var(--amber)'}">€${parseFloat(i.price).toFixed(2)}</span></div>`).join('')}
+      </div></div>`;
+  });
+  let byCat='';
+  CATEGORIES.forEach(cat=>{
+    const items = data.items.filter(i=>i.category===cat&&i.price);
+    if (!items.length) return;
+    const total = items.reduce((s,i)=>s+parseFloat(i.price),0);
+    const cc = CAT_COLORS[cat];
+    byCat += `<div class="cost-card"><div class="cost-header">
+      <div class="cost-title"><span class="cat-badge" style="background:${cc.bg};color:${cc.c};font-size:13px;padding:4px 10px">${cat}</span></div>
+      <span class="cost-amt">€${total.toFixed(2)}</span>
+    </div></div>`;
+  });
+  c.innerHTML = `
+    <div class="section-title">Nach Raum</div>
+    ${byRoom||'<p style="padding:0 16px 8px;font-size:13px;color:var(--text3)">Keine Preise erfasst.</p>'}
+    <div class="section-title">Nach Kategorie</div>
+    ${byCat||'<p style="padding:0 16px 8px;font-size:13px;color:var(--text3)">Keine Kategorien vergeben.</p>'}
+    <div class="cost-total"><span class="cost-total-label">Gesamt</span><span class="cost-total-amt">€${(spent+open).toFixed(2)}</span></div>
+    <div style="height:20px"></div>`;
+}
+
+function toggleOwned(id) {
+  const item = data.items.find(i=>i.id===id);
+  if (!item) return;
+  item.status = item.status==='owned' ? 'planned' : 'owned';
+  window.fbSaveItem && window.fbSaveItem(item);
+}
+
+function deleteItem(id) {
+  window.fbDeleteItem && window.fbDeleteItem(id);
+}
+
+function setFilter(f,btn) {
+  currentFilter=f;
+  document.querySelectorAll('#view-items .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderItems();
+}
+
+let modalMode='', modalRoomId=null;
+function openAddRoom() { modalMode='room'; showModal(); }
+function openAddItem(roomId) { modalMode='item'; modalRoomId=roomId; editingItemId=null; showModal(); }
+function openEditItem(id) { modalMode='item'; editingItemId=id; showModal(); }
+
+function showModal() {
+  removeModal();
+  const div = document.createElement('div');
+  div.className='modal-overlay'; div.id='modal';
+  div.onclick = e=>{ if(e.target===div) removeModal(); };
+
+  if (modalMode==='room') {
+    const emojiOpts = ROOM_EMOJIS.map((e,i)=>`<option value="${e}">${e} ${ROOM_EMOJI_NAMES[i]}</option>`).join('');
+    div.innerHTML = `<div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Neuen Raum</h3>
+      <div class="form-group"><label>Name</label><input id="m-name" placeholder="z.B. Wohnzimmer" /></div>
+      <div class="form-group"><label>Icon</label><select id="m-icon">${emojiOpts}</select></div>
+      <div class="btn-row">
+        <button class="btn-cancel" onclick="removeModal()">Abbrechen</button>
+        <button class="btn-save" onclick="saveRoom()">Speichern</button>
+      </div></div>`;
+  } else {
+    const item = editingItemId ? data.items.find(i=>i.id===editingItemId) : null;
+    const roomOptions = data.rooms.map(r=>`<option value="${r.id}" ${((item?item.roomId:modalRoomId||currentRoomId)===r.id)?'selected':''}>${r.name}</option>`).join('');
+    const catOptions = CATEGORIES.map(cat=>`<option value="${cat}" ${item&&item.category===cat?'selected':''}>${cat}</option>`).join('');
+    div.innerHTML = `<div class="modal">
+      <div class="modal-handle"></div>
+      <h3>${item?'Bearbeiten':'Neuer Gegenstand'}</h3>
+      <div class="form-group"><label>Name</label><input id="m-name" placeholder="z.B. Sofa, Stehlampe..." value="${item?item.name:''}" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Raum</label><select id="m-room">${data.rooms.length?roomOptions:'<option value="">– kein –</option>'}</select></div>
+        <div class="form-group"><label>Kategorie</label><select id="m-cat"><option value="">– keine –</option>${catOptions}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Status</label>
+          <select id="m-status">
+            <option value="planned" ${!item||item.status==='planned'?'selected':''}>Geplant</option>
+            <option value="ordered" ${item&&item.status==='ordered'?'selected':''}>Bestellt</option>
+            <option value="owned"   ${item&&item.status==='owned'?'selected':''}>Vorhanden</option>
+          </select></div>
+        <div class="form-group"><label>Preis (€)</label><input id="m-price" type="number" step="0.01" inputmode="decimal" placeholder="0.00" value="${item&&item.price?item.price:''}" /></div>
+      </div>
+      <div class="form-group"><label>Notiz / Shop</label><input id="m-note" placeholder="z.B. IKEA, Amazon..." value="${item&&item.note?item.note:''}" /></div>
+      <div class="form-group"><label>Link (URL)</label><input id="m-link" type="url" inputmode="url" placeholder="https://..." value="${item&&item.link?item.link:''}" /></div>
+      <div class="btn-row">
+        <button class="btn-cancel" onclick="removeModal()">Abbrechen</button>
+        <button class="btn-save" onclick="saveItem()">Speichern</button>
+      </div></div>`;
+  }
+  document.body.appendChild(div);
+  setTimeout(()=>{ const inp=div.querySelector('#m-name'); if(inp) inp.focus(); },100);
+}
+
+function removeModal() { const m=document.getElementById('modal'); if(m) m.remove(); }
+
+function saveRoom() {
+  const name=document.getElementById('m-name').value.trim();
+  const icon=document.getElementById('m-icon').value;
+  if (!name) return;
+  const room = {id:uid(), name, icon, order: data.rooms.length};
+  window.fbSaveRoom && window.fbSaveRoom(room);
+  removeModal();
+}
+
+function saveItem() {
+  const name=document.getElementById('m-name').value.trim();
+  if (!name) return;
+  const status=document.getElementById('m-status').value;
+  const price=document.getElementById('m-price').value;
+  const note=document.getElementById('m-note').value.trim();
+  const roomId=document.getElementById('m-room').value;
+  const category=document.getElementById('m-cat').value;
+  let link=document.getElementById('m-link').value.trim();
+  if (link && !link.startsWith('http')) link = 'https://'+link;
+
+  if (editingItemId) {
+    const existing = data.items.find(i=>i.id===editingItemId);
+    const updated = {...existing, name, status, price, note, roomId, category, link};
+    window.fbSaveItem && window.fbSaveItem(updated);
+  } else {
+    const item = {id:uid(), name, status, price, note, roomId, category, link, _shopDone:false};
+    window.fbSaveItem && window.fbSaveItem(item);
+  }
+  removeModal();
+}
+</script>
+</body>
+</html>
