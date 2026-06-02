@@ -233,7 +233,7 @@ document.currentScript.parentNode.appendChild(link);
     <h1>Einkaufsliste</h1>
     <button class="icon-btn" onclick="markAllShopDone()"><svg width="18" height="18"><use href="#ic-checks"/></svg> Erledigt</button>
   </div>
-  <div class="filter-bar">
+  <div class="filter-bar" id="shop-filter-bar">
     <button class="filter-btn active" onclick="setShopFilter('all',this)">Alle</button>
     <button class="filter-btn" onclick="setShopFilter('planned',this)">Geplant</button>
     <button class="filter-btn" onclick="setShopFilter('ordered',this)">Bestellt</button>
@@ -512,9 +512,27 @@ function renderItems() {
   }).join('');
 }
 
-function renderShop() {
+function renderShopFilterBar() {
   const candidates = data.items.filter(i=>i.status!=='owned');
-  const filtered = shopFilter==='all' ? candidates : candidates.filter(i=>i.status===shopFilter);
+  const shops = [...new Set(candidates.map(i=>i.note).filter(Boolean))].sort();
+  const bar = document.getElementById('shop-filter-bar');
+  // Keep first 3 fixed buttons, rebuild shop buttons after
+  const fixed = ['all','planned','ordered'];
+  const fixedLabels = {all:'Alle', planned:'Geplant', ordered:'Bestellt'};
+  let html = fixed.map(f=>`<button class="filter-btn ${shopFilter===f?'active':''}" onclick="setShopFilter('${f}',this)">${fixedLabels[f]}</button>`).join('');
+  if (shops.length) {
+    html += shops.map(s=>`<button class="filter-btn ${shopFilter===s?'active':''}" onclick="setShopFilter('${CSS.escape(s)}',this)">${s}</button>`).join('');
+  }
+  bar.innerHTML = html;
+}
+
+function renderShop() {
+  renderShopFilterBar();
+  const candidates = data.items.filter(i=>i.status!=='owned');
+  let filtered;
+  if (shopFilter==='all') filtered = candidates;
+  else if (shopFilter==='planned' || shopFilter==='ordered') filtered = candidates.filter(i=>i.status===shopFilter);
+  else filtered = candidates.filter(i=>i.note===shopFilter);
   const sorted = [...filtered].sort((a,b)=>(a._shopDone?1:-1)-(b._shopDone?1:-1));
   const c = document.getElementById('shop-container');
   if (!sorted.length) {
@@ -533,13 +551,11 @@ function renderShop() {
     html += `<div class="section-title">${roomName}</div>`;
     items.forEach(item=>{
       const price = item.price ? '€'+parseFloat(item.price).toFixed(2) : '';
-      const cc = item.category ? (CAT_COLORS[item.category]||CAT_COLORS['Sonstiges']) : null;
-      const catBadge = cc ? `<span class="cat-badge" style="background:${cc.bg};color:${cc.c};margin-left:5px">${item.category}</span>` : '';
       const checkInner = item._shopDone ? `<svg width="13" height="13" style="color:#fff"><use href="#ic-check"/></svg>` : '';
       const linkBtn = item.link ? `<a class="item-link" href="${item.link}" target="_blank" rel="noopener"><svg width="18" height="18"><use href="#ic-link"/></svg></a>` : '';
       html += `<div class="shoplist-item">
         <div class="shoplist-check ${item._shopDone?'done':''}" onclick="toggleShopDone('${item.id}')">${checkInner}</div>
-        <span class="shop-name ${item._shopDone?'done':''}">${item.name}${catBadge}</span>
+        <span class="shop-name ${item._shopDone?'done':''}">${item.name}</span>
         <span class="shop-price">${price}</span>
         ${linkBtn}
         <span class="status-badge badge-${item.status}" style="margin-left:4px">${item.status==='planned'?'Geplant':'Bestellt'}</span>
@@ -566,8 +582,7 @@ function markAllShopDone() {
 
 function setShopFilter(f,btn) {
   shopFilter=f;
-  document.querySelectorAll('#view-shopping .filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); renderShop();
+  renderShop();
 }
 
 function renderCosts() {
