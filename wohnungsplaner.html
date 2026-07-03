@@ -205,6 +205,7 @@ document.currentScript.parentNode.appendChild(link);
       <div class="stat-card"><div class="stat-label">Vorhanden</div><div class="stat-value green" id="stat-owned">0</div></div>
       <div class="stat-card"><div class="stat-label">Ausstehend</div><div class="stat-value amber" id="stat-pending">0</div></div>
       <div class="stat-card"><div class="stat-label">Ausgegeben</div><div class="stat-value blue" id="stat-spent">€0</div></div>
+      <div class="stat-card"><div class="stat-label">Bestellt</div><div class="stat-value" style="color:#534AB7" id="stat-ordered">€0</div></div>
       <div class="stat-card"><div class="stat-label">Noch geplant</div><div class="stat-value" id="stat-plan">€0</div></div>
     </div>
     <div class="section-title">Räume</div>
@@ -260,7 +261,8 @@ document.currentScript.parentNode.appendChild(link);
   <div class="scroll-area">
     <div class="summary-bar">
       <div class="stat-card"><div class="stat-label">Ausgegeben</div><div class="stat-value green" id="cost-spent">€0</div></div>
-      <div class="stat-card"><div class="stat-label">Noch offen</div><div class="stat-value amber" id="cost-open">€0</div></div>
+      <div class="stat-card"><div class="stat-label">Bestellt</div><div class="stat-value" style="color:#534AB7" id="cost-ordered">€0</div></div>
+      <div class="stat-card"><div class="stat-label">Noch geplant</div><div class="stat-value amber" id="cost-open">€0</div></div>
     </div>
     <div id="cost-container"></div>
   </div>
@@ -440,11 +442,13 @@ function showUserMenu() {
 function renderRooms() {
   const owned = data.items.filter(i=>i.status==='owned').length;
   const pending = data.items.filter(i=>i.status!=='owned').length;
-  const spent = data.items.filter(i=>i.status==='owned'&&i.price).reduce((s,i)=>s+parseFloat(i.price),0);
-  const plan  = data.items.filter(i=>i.status!=='owned'&&i.price).reduce((s,i)=>s+parseFloat(i.price),0);
+  const spent   = data.items.filter(i=>i.status==='owned'&&i.price).reduce((s,i)=>s+parseFloat(i.price),0);
+  const ordered = data.items.filter(i=>i.status==='ordered'&&i.price).reduce((s,i)=>s+parseFloat(i.price),0);
+  const plan    = data.items.filter(i=>i.status==='planned'&&i.price).reduce((s,i)=>s+parseFloat(i.price),0);
   document.getElementById('stat-owned').textContent = owned;
   document.getElementById('stat-pending').textContent = pending;
   document.getElementById('stat-spent').textContent = '€'+spent.toFixed(2);
+  document.getElementById('stat-ordered').textContent = '€'+ordered.toFixed(2);
   document.getElementById('stat-plan').textContent = '€'+plan.toFixed(2);
 
   const c = document.getElementById('rooms-container');
@@ -616,10 +620,12 @@ function setShopFilter(f,btn) {
 
 function renderCosts() {
   const allP = data.items.filter(i=>i.price);
-  const spent = allP.filter(i=>i.status==='owned').reduce((s,i)=>s+parseFloat(i.price),0);
-  const open  = allP.filter(i=>i.status!=='owned').reduce((s,i)=>s+parseFloat(i.price),0);
-  document.getElementById('cost-spent').textContent = '€'+spent.toFixed(2);
-  document.getElementById('cost-open').textContent  = '€'+open.toFixed(2);
+  const spent   = allP.filter(i=>i.status==='owned').reduce((s,i)=>s+parseFloat(i.price),0);
+  const ordered = allP.filter(i=>i.status==='ordered').reduce((s,i)=>s+parseFloat(i.price),0);
+  const open    = allP.filter(i=>i.status==='planned').reduce((s,i)=>s+parseFloat(i.price),0);
+  document.getElementById('cost-spent').textContent   = '€'+spent.toFixed(2);
+  document.getElementById('cost-ordered').textContent = '€'+ordered.toFixed(2);
+  document.getElementById('cost-open').textContent    = '€'+open.toFixed(2);
   const c = document.getElementById('cost-container');
   if (!allP.length) {
     c.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>Noch keine Preise erfasst.</p></div>';
@@ -657,7 +663,7 @@ function renderCosts() {
     ${byRoom||'<p style="padding:0 16px 8px;font-size:13px;color:var(--text3)">Keine Preise erfasst.</p>'}
     <div class="section-title">Nach Kategorie</div>
     ${byCat||'<p style="padding:0 16px 8px;font-size:13px;color:var(--text3)">Keine Kategorien vergeben.</p>'}
-    <div class="cost-total"><span class="cost-total-label">Gesamt</span><span class="cost-total-amt">€${(spent+open).toFixed(2)}</span></div>
+    <div class="cost-total"><span class="cost-total-label">Gesamt</span><span class="cost-total-amt">€${(spent+ordered+open).toFixed(2)}</span></div>
     <div style="height:20px"></div>`;
 }
 
