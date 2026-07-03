@@ -55,10 +55,14 @@ document.currentScript.parentNode.appendChild(link);
   .nav-btn.active{color:var(--blue);}
   .nav-btn svg{width:24px;height:24px;}
   .summary-bar{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:14px 16px 8px;}
+  .summary-bar-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 8px;}
   .stat-card{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;}
+  .stat-card.small{padding:9px 10px;}
   .stat-label{font-size:12px;color:var(--text2);margin-bottom:4px;}
+  .stat-label.small{font-size:10px;margin-bottom:3px;}
   .stat-value{font-size:21px;font-weight:600;}
-  .stat-value.green{color:var(--green);}.stat-value.amber{color:var(--amber);}.stat-value.blue{color:var(--blue);}
+  .stat-value.small{font-size:14px;}
+  .stat-value.green{color:var(--green);}.stat-value.amber{color:var(--amber);}.stat-value.blue{color:var(--blue);}.stat-value.ordered{color:#185FA5;}
   .section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;padding:14px 16px 7px;}
   .room-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:13px 14px;margin:0 16px 10px;cursor:pointer;display:flex;align-items:center;gap:12px;-webkit-user-select:none;}
   .room-card:active{background:var(--bg2);}
@@ -204,9 +208,11 @@ document.currentScript.parentNode.appendChild(link);
     <div class="summary-bar">
       <div class="stat-card"><div class="stat-label">Vorhanden</div><div class="stat-value green" id="stat-owned">0</div></div>
       <div class="stat-card"><div class="stat-label">Ausstehend</div><div class="stat-value amber" id="stat-pending">0</div></div>
-      <div class="stat-card"><div class="stat-label">Ausgegeben</div><div class="stat-value blue" id="stat-spent">€0</div></div>
-      <div class="stat-card"><div class="stat-label">Bestellt</div><div class="stat-value" style="color:#534AB7" id="stat-ordered">€0</div></div>
-      <div class="stat-card"><div class="stat-label">Noch geplant</div><div class="stat-value" id="stat-plan">€0</div></div>
+    </div>
+    <div class="summary-bar-3">
+      <div class="stat-card small"><div class="stat-label small">Ausgegeben</div><div class="stat-value small blue" id="stat-spent">€0</div></div>
+      <div class="stat-card small"><div class="stat-label small">Bestellt</div><div class="stat-value small ordered" id="stat-ordered">€0</div></div>
+      <div class="stat-card small"><div class="stat-label small">Geplant</div><div class="stat-value small" id="stat-plan">€0</div></div>
     </div>
     <div class="section-title">Räume</div>
     <div id="rooms-container"></div>
@@ -259,10 +265,10 @@ document.currentScript.parentNode.appendChild(link);
 <div id="view-costs" class="view">
   <div class="topbar"><h1>Kostenübersicht</h1></div>
   <div class="scroll-area">
-    <div class="summary-bar">
-      <div class="stat-card"><div class="stat-label">Ausgegeben</div><div class="stat-value green" id="cost-spent">€0</div></div>
-      <div class="stat-card"><div class="stat-label">Bestellt</div><div class="stat-value" style="color:#534AB7" id="cost-ordered">€0</div></div>
-      <div class="stat-card"><div class="stat-label">Noch geplant</div><div class="stat-value amber" id="cost-open">€0</div></div>
+    <div class="summary-bar-3">
+      <div class="stat-card small"><div class="stat-label small">Ausgegeben</div><div class="stat-value small green" id="cost-spent">€0</div></div>
+      <div class="stat-card small"><div class="stat-label small">Bestellt</div><div class="stat-value small ordered" id="cost-ordered">€0</div></div>
+      <div class="stat-card small"><div class="stat-label small">Geplant</div><div class="stat-value small amber" id="cost-open">€0</div></div>
     </div>
     <div id="cost-container"></div>
   </div>
